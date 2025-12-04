@@ -1,5 +1,6 @@
 # Dataset files (too large for repository)
 dataset_local.csv
+dataset_contraste.csv
 *.csv
 
 # Note: .pkl model files are now included in the repository

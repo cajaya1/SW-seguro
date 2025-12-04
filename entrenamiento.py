@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
 # --- CONFIGURACIÓN ---
-INPUT_FILE = "dataset_local.csv"
+INPUT_FILE = "dataset_contraste.csv"
 MODEL_FILE = "modelo_seguridad_final.pkl"
 SAMPLE_SIZE = 30000   
 MAX_CODE_LEN = 30000 
@@ -64,26 +64,39 @@ if __name__ == "__main__":
     start_total = time.time()
     print(f"Starting model training process (corrected version)")
     
-    print("\n[1/4] Leyendo archivo...")
+    print("\n[1/4] Loading dataset and balancing classes...")
     try:
-        df = pd.read_csv(INPUT_FILE, nrows=SAMPLE_SIZE * 2) 
+        # 1. Load dataset (full or large sample)
+        df = pd.read_csv(INPUT_FILE, nrows=SAMPLE_SIZE * 3) 
         
-        # LIMPIEZA CRÍTICA: Eliminamos filas sin código O SIN ETIQUETA
+        # 2. Basic data cleaning
         df = df.dropna(subset=['code', 'label'])
         df = df.drop_duplicates(subset=['code'])
         
-        if len(df) > SAMPLE_SIZE:
-            df = df.sample(n=SAMPLE_SIZE, random_state=42)
+        # 3. Separate classes for analysis
+        df_vuln = df[df['label'] == 1]
+        df_safe = df[df['label'] == 0]
         
-        # --- ¡AQUÍ ESTÁ LA MAGIA QUE ARREGLA EL ERROR! ---
-        # Reseteamos el índice para que al unir después no haya huecos NaN
-        df = df.reset_index(drop=True)
-        # -------------------------------------------------
+        print(f"   Class distribution: {len(df_vuln)} Vulnerable vs {len(df_safe)} Secure")
+        
+        # 4. Class balancing using undersampling
+        # Use minimum class size to achieve 50/50 balance
+        min_len = min(len(df_vuln), len(df_safe))
+        
+        # Sample equal amounts from each class
+        df_vuln_bal = df_vuln.sample(n=min_len, random_state=42)
+        df_safe_bal = df_safe.sample(n=min_len, random_state=42)
+        
+        # Recombine balanced datasets
+        df = pd.concat([df_vuln_bal, df_safe_bal])
+        
+        # Shuffle and reset index (critical for proper alignment)
+        df = df.sample(frac=1, random_state=42).reset_index(drop=True)
             
-        print(f"   Data prepared and aligned: {len(df)} records.")
+        print(f"   Balanced dataset ready: {len(df)} records (50% Vulnerable / 50% Secure).")
 
     except FileNotFoundError:
-        print("Error: dataset_local.csv file not found")
+        print("Error: Dataset file not found")
         exit()
 
     print(f"\n[2/4] Extracting features...")
