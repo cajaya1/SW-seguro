@@ -2,8 +2,8 @@
 dataset_local.csv
 *.csv
 
-# Model files (can be regenerated)
-*.pkl
+# Note: .pkl model files are now included in the repository
+# Remove the *.pkl line to allow modelo_seguridad_final.pkl to be tracked
 
 # Python cache files
 __pycache__/

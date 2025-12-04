@@ -1,171 +1,171 @@
-# Security Vulnerability Scanner
+# Escáner de Vulnerabilidades de Seguridad
 
-An AI-powered tool for detecting security vulnerabilities in source code using machine learning techniques.
+Una herramienta impulsada por IA para detectar vulnerabilidades de seguridad en código fuente utilizando técnicas de aprendizaje automático.
 
-## Overview
+## Descripción General
 
-This project implements a machine learning-based vulnerability scanner that analyzes source code files and predicts the likelihood of security vulnerabilities. The system uses static code analysis combined with machine learning to identify potentially dangerous code patterns.
+Este proyecto implementa un escáner de vulnerabilidades basado en aprendizaje automático que analiza archivos de código fuente y predice la probabilidad de vulnerabilidades de seguridad. El sistema utiliza análisis de código estático combinado con aprendizaje automático para identificar patrones de código potencialmente peligrosos.
 
-## Features
+## Características
 
-- **AI-powered Analysis**: Uses Random Forest classifier to predict vulnerability probability
-- **Multi-language Support**: Supports Python, JavaScript, TypeScript, and Java files
-- **Static Code Analysis**: Leverages Lizard for complexity metrics and pattern matching
-- **Local Scanning**: Performs analysis on local files without sending code to external servers
-- **Training Pipeline**: Complete pipeline for training models on vulnerability datasets
-- **Data Mining**: Tools for mining vulnerability data from Git repositories
+- **Análisis impulsado por IA**: Utiliza clasificador Random Forest para predecir la probabilidad de vulnerabilidades
+- **Soporte multi-lenguaje**: Compatible con archivos Python, JavaScript, TypeScript y Java
+- **Análisis de código estático**: Aprovecha Lizard para métricas de complejidad y coincidencia de patrones
+- **Escaneo local**: Realiza análisis en archivos locales sin enviar código a servidores externos
+- **Pipeline de entrenamiento**: Pipeline completo para entrenar modelos en conjuntos de datos de vulnerabilidades
+- **Minería de datos**: Herramientas para extraer datos de vulnerabilidades de repositorios Git
 
-## Project Structure
+## Estructura del Proyecto
 
 ```
-├── demo_scanner.py      # Interactive vulnerability scanner
-├── entrenamiento.py     # Model training pipeline
-├── mineria.py          # Data mining from repositories
-├── seguro.py           # Example of secure coding practices
-├── vulnerable.py       # Example of vulnerable code patterns
-├── dataset_local.csv   # Training dataset (gitignored due to size)
-├── repos_descargados/  # Cloned repositories for analysis
-└── modelo_seguridad_final.pkl  # Trained model file
+├── demo_scanner.py      # Escáner interactivo de vulnerabilidades
+├── entrenamiento.py     # Pipeline de entrenamiento del modelo
+├── mineria.py          # Minería de datos de repositorios
+├── seguro.py           # Ejemplo de prácticas de código seguro
+├── vulnerable.py       # Ejemplo de patrones de código vulnerable
+├── dataset_local.csv   # Dataset de entrenamiento (ignorado por tamaño)
+├── repos_descargados/  # Repositorios clonados para análisis
+└── modelo_seguridad_final.pkl  # Archivo del modelo entrenado
 ```
 
-## Installation
+## Instalación
 
-1. Clone this repository:
+1. Clona este repositorio:
 ```bash
 git clone <repository-url>
 cd lab1p2v2
 ```
 
-2. Install required dependencies:
+2. Instala las dependencias requeridas:
 ```bash
 pip install pandas numpy scikit-learn joblib matplotlib seaborn tqdm lizard pydriller flask
 ```
 
-## Usage
+## Uso
 
-### Quick Start - Vulnerability Scanner
+### Inicio Rápido - Escáner de Vulnerabilidades
 
-Run the interactive scanner to analyze individual files:
+Ejecuta el escáner interactivo para analizar archivos individuales:
 
 ```bash
 python demo_scanner.py
 ```
 
-Enter the path to a source code file when prompted. The scanner will output:
-- Risk status (SECURE/HIGH RISK)
-- Vulnerability probability percentage
-- Detailed metrics
+Ingresa la ruta a un archivo de código fuente cuando se solicite. El escáner mostrará:
+- Estado de riesgo (SECURE/HIGH RISK)
+- Porcentaje de probabilidad de vulnerabilidad
+- Métricas detalladas
 
-### Training a New Model
+### Entrenar un Nuevo Modelo
 
-To train a new model with your own dataset:
+Para entrenar un nuevo modelo con tu propio conjunto de datos:
 
 ```bash
 python entrenamiento.py
 ```
 
-This will:
-1. Load the dataset from `dataset_local.csv`
-2. Extract features using static analysis
-3. Train a Random Forest classifier
-4. Save the model as `modelo_seguridad_final.pkl`
-5. Generate performance metrics and confusion matrix
+Esto hará:
+1. Cargar el conjunto de datos desde `dataset_local.csv`
+2. Extraer características usando análisis estático
+3. Entrenar un clasificador Random Forest
+4. Guardar el modelo como `modelo_seguridad_final.pkl`
+5. Generar métricas de rendimiento y matriz de confusión
 
-### Mining Vulnerability Data
+### Minería de Datos de Vulnerabilidades
 
-To collect training data from open source repositories:
+Para recopilar datos de entrenamiento de repositorios de código abierto:
 
 ```bash
 python mineria.py
 ```
 
-This will:
-- Clone specified repositories
-- Analyze commit messages for security-related keywords
-- Extract before/after code samples from security fixes
-- Generate labeled dataset for training
+Esto hará:
+- Clonar repositorios especificados
+- Analizar mensajes de commit para palabras clave relacionadas con seguridad
+- Extraer muestras de código antes/después de correcciones de seguridad
+- Generar conjunto de datos etiquetado para entrenamiento
 
-## Model Features
+## Características del Modelo
 
-The scanner analyzes the following code characteristics:
+El escáner analiza las siguientes características del código:
 
-- **Lines of Code (NLOC)**: Number of non-comment lines
-- **Cyclomatic Complexity**: Code complexity metrics
-- **Risk Keywords**: Presence of potentially dangerous functions
-- **Code Content**: TF-IDF vectorization of source code
+- **Líneas de Código (NLOC)**: Número de líneas sin comentarios
+- **Complejidad Ciclomática**: Métricas de complejidad del código
+- **Palabras Clave de Riesgo**: Presencia de funciones potencialmente peligrosas
+- **Contenido del Código**: Vectorización TF-IDF del código fuente
 
-### Risk Patterns Detected
+### Patrones de Riesgo Detectados
 
-- **Python**: `eval()`, `exec()`, `subprocess`, `os.system`, SQL execution
+- **Python**: `eval()`, `exec()`, `subprocess`, `os.system`, ejecución SQL
 - **JavaScript**: `eval()`, `innerHTML`, `document.write`, `dangerouslySetInnerHTML`
-- **Java**: Dynamic SQL statements, `Runtime.exec()`, parameter concatenation
+- **Java**: Declaraciones SQL dinámicas, `Runtime.exec()`, concatenación de parámetros
 
-## Examples
+## Ejemplos
 
-### Secure vs Vulnerable Code
+### Código Seguro vs Vulnerable
 
-The project includes example files demonstrating:
+El proyecto incluye archivos de ejemplo que demuestran:
 
-- **seguro.py**: Secure coding practices (parameterized queries, input validation, etc.)
-- **vulnerable.py**: Common vulnerability patterns (SQL injection, command injection, etc.)
+- **seguro.py**: Prácticas de código seguro (consultas parametrizadas, validación de entrada, etc.)
+- **vulnerable.py**: Patrones comunes de vulnerabilidades (inyección SQL, inyección de comandos, etc.)
 
-## Performance
+## Rendimiento
 
-The trained model achieves:
-- **Accuracy**: Varies by dataset (typically 85%+ on balanced datasets)
-- **Risk Threshold**: 40% probability threshold for HIGH RISK classification
-- **Processing Speed**: Analyzes files in milliseconds after model loading
+El modelo entrenado logra:
+- **Precisión**: Varía según el conjunto de datos (típicamente 85%+ en conjuntos balanceados)
+- **Umbral de Riesgo**: Umbral de probabilidad del 40% para clasificación de ALTO RIESGO
+- **Velocidad de Procesamiento**: Analiza archivos en milisegundos después de cargar el modelo
 
-## Security Considerations
+## Consideraciones de Seguridad
 
-- All analysis is performed locally
-- No code is transmitted to external services
-- Model predictions are probabilistic and should be verified manually
-- Tool is designed for educational and security testing purposes
+- Todo el análisis se realiza localmente
+- No se transmite código a servicios externos
+- Las predicciones del modelo son probabilísticas y deben verificarse manualmente
+- La herramienta está diseñada para propósitos educativos y de pruebas de seguridad
 
-## Contributing
+## Contribuir
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+1. Haz fork del repositorio
+2. Crea una rama de características
+3. Realiza tus cambios
+4. Agrega pruebas si es aplicable
+5. Envía un pull request
 
-## License
+## Licencia
 
-This project is for educational purposes. Please ensure compliance with relevant security testing regulations in your jurisdiction.
+Este proyecto es para propósitos educativos. Por favor, asegúrate de cumplir con las regulaciones de pruebas de seguridad relevantes en tu jurisdicción.
 
-## Limitations
+## Limitaciones
 
-- Static analysis cannot detect all vulnerability types
-- Machine learning predictions may have false positives/negatives
-- Requires pre-trained model for operation
-- Limited to supported programming languages
+- El análisis estático no puede detectar todos los tipos de vulnerabilidades
+- Las predicciones de aprendizaje automático pueden tener falsos positivos/negativos
+- Requiere modelo pre-entrenado para operar
+- Limitado a lenguajes de programación soportados
 
-## Future Enhancements
+## Mejoras Futuras
 
-- Support for additional programming languages
-- Integration with CI/CD pipelines
-- Real-time code analysis in IDEs
-- Enhanced deep learning models
-- API endpoint for remote analysis
+- Soporte para lenguajes de programación adicionales
+- Integración con pipelines CI/CD
+- Análisis de código en tiempo real en IDEs
+- Modelos de aprendizaje profundo mejorados
+- Endpoint API para análisis remoto
 
-## Troubleshooting
+## Solución de Problemas
 
-### Common Issues
+### Problemas Comunes
 
-1. **Model file not found**: Run `entrenamiento.py` to train a new model
-2. **Missing dependencies**: Install required packages using pip
-3. **Dataset too large**: Use sampling in training script
-4. **Memory issues**: Reduce `SAMPLE_SIZE` in configuration
+1. **Archivo de modelo no encontrado**: Ejecuta `entrenamiento.py` para entrenar un nuevo modelo
+2. **Dependencias faltantes**: Instala los paquetes requeridos usando pip
+3. **Conjunto de datos muy grande**: Usa muestreo en el script de entrenamiento
+4. **Problemas de memoria**: Reduce `SAMPLE_SIZE` en la configuración
 
-### Performance Tips
+### Consejos de Rendimiento
 
-- Use SSD storage for large datasets
-- Increase RAM for processing large repositories
-- Use multi-core systems for faster training
-- Cache cloned repositories for repeated mining
+- Usa almacenamiento SSD para conjuntos de datos grandes
+- Aumenta la RAM para procesar repositorios grandes
+- Usa sistemas multi-núcleo para entrenamiento más rápido
+- Cachea repositorios clonados para minería repetida
 
-## Contact
+## Contacto
 
-For questions or support, please open an issue in the repository.
+Para preguntas o soporte, por favor abre un issue en el repositorio.
