@@ -153,7 +153,7 @@ jobs:
         run: |
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="🔀 PR #${{ github.event.pull_request.number }} merged to test branch%0A%0APreparing for production deployment..."
+            -d text="✅ Pipeline complete for PR #${{ github.event.pull_request.number }}%0A%0AYou can now merge manually to test branch."
 
   # Stage 3: Deploy to Production (triggers on push to main)
   deploy:
@@ -176,10 +176,15 @@ jobs:
         run: |
           docker build -t secure-devops-app:latest .
       
-      - name: 🌐 Deploy to Render (or other platform)
+      - name: 🌐 Deploy to Render
         run: |
-          echo "Deployment configured through Render/Railway dashboard"
-          # Render auto-deploys on main branch push if configured
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+            echo "✅ Deployment triggered on Render"
+          else
+            echo "⚠️  RENDER_DEPLOY_HOOK not configured. Skipping deployment."
+            echo "Configure it at: https://render.com/docs/deploy-hooks"
+          fi
       
       - name: ✅ Notify Deployment Success
         run: |
