@@ -147,15 +147,9 @@ jobs:
         run: |
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="✅ All tests passed for PR #${{ github.event.pull_request.number }}%0A%0AReady for merge to test branch..."
+            -d text="✅ All tests passed for PR #${{ github.event.pull_request.number }}%0A%0A✅ READY TO MERGE to test branch!%0A%0AAll checks passed successfully."
       
-      - name: 🔀 Auto-merge to test branch
-        run: |
-          gh pr merge ${{ github.event.pull_request.number }} --auto --squash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: 📢 Notify Merge Complete
+      - name: 📢 Notify Ready for Merge
         run: |
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
