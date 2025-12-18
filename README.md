@@ -243,7 +243,7 @@ El pipeline CI/CD automáticamente analizará tu código.
 
 ## 👥 Autores
 
-- **Cristhian Jaya** - [cajaya1](https://github.com/cajaya1)
+- **Carlos Jaya** - [cajaya1](https://github.com/cajaya1)
 
 ## 📄 Licencia
 
