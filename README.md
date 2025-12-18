@@ -1,171 +1,264 @@
-# Escáner de Vulnerabilidades de Seguridad
+# 🔒 SW Seguro - Sistema de Detección de Vulnerabilidades con IA
 
-Una herramienta impulsada por IA para detectar vulnerabilidades de seguridad en código fuente utilizando técnicas de aprendizaje automático.
+[![CI/CD Pipeline](https://github.com/cajaya1/SW-seguro/actions/workflows/ci-cd-pipeline.yml/badge.svg)](https://github.com/cajaya1/SW-seguro/actions)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Descripción General
+Sistema de detección automática de vulnerabilidades de seguridad en código Python, JavaScript y Java utilizando Machine Learning y análisis basado en reglas. Desarrollado como parte del proyecto académico "Pipeline CI/CD Seguro con Integración de IA".
 
-Este proyecto implementa un escáner de vulnerabilidades basado en aprendizaje automático que analiza archivos de código fuente y predice la probabilidad de vulnerabilidades de seguridad. El sistema utiliza análisis de código estático combinado con aprendizaje automático para identificar patrones de código potencialmente peligrosos.
+## 📋 Tabla de Contenidos
 
-## Características
+- [Características](#características)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Instalación](#instalación)
+- [Uso Rápido](#uso-rápido)
+- [Documentación](#documentación)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Vulnerabilidades Detectadas](#vulnerabilidades-detectadas)
+- [Licencia](#licencia)
 
-- **Análisis impulsado por IA**: Utiliza clasificador Random Forest para predecir la probabilidad de vulnerabilidades
-- **Soporte multi-lenguaje**: Compatible con archivos Python, JavaScript, TypeScript y Java
-- **Análisis de código estático**: Aprovecha Lizard para métricas de complejidad y coincidencia de patrones
-- **Escaneo local**: Realiza análisis en archivos locales sin enviar código a servidores externos
-- **Pipeline de entrenamiento**: Pipeline completo para entrenar modelos en conjuntos de datos de vulnerabilidades
-- **Minería de datos**: Herramientas para extraer datos de vulnerabilidades de repositorios Git
+## ✨ Características
 
-## Estructura del Proyecto
+- **Detección ML + Reglas**: Combina Random Forest con análisis basado en patrones regex
+- **9 Tipos de Vulnerabilidades**: SQL Injection, XSS, Command Injection, Code Injection, Path Traversal, Deserialization, Weak Crypto, Hardcoded Secrets, Unsafe File Operations
+- **Localización Exacta**: Indica línea de código específica y código vulnerable
+- **Severidad Clasificada**: CRITICAL, HIGH, MEDIUM, LOW
+- **Recomendaciones**: Sugerencias específicas de corrección
+- **CI/CD Integrado**: GitHub Actions con bloqueo automático de PRs vulnerables
+- **Notificaciones Telegram**: Alertas en tiempo real del pipeline
+- **3 Lenguajes**: Python, JavaScript, Java
+
+## 📁 Estructura del Proyecto
 
 ```
-├── demo_scanner.py      # Escáner interactivo de vulnerabilidades
-├── entrenamiento.py     # Pipeline de entrenamiento del modelo
-├── mineria.py          # Minería de datos de repositorios
-├── seguro.py           # Ejemplo de prácticas de código seguro
-├── vulnerable.py       # Ejemplo de patrones de código vulnerable
-├── dataset_local.csv   # Dataset de entrenamiento (ignorado por tamaño)
-├── repos_descargados/  # Repositorios clonados para análisis
-└── modelo_seguridad_final.pkl  # Archivo del modelo entrenado
+lab1p2v2/
+├── src/                          # Código fuente principal
+│   ├── model/                    # Entrenamiento del modelo ML
+│   │   ├── entrenamiento.py      # Script de entrenamiento con Grid Search
+│   │   └── mineria.py            # Extracción de datos de repositorios
+│   ├── scanner/                  # Motor de escaneo
+│   │   ├── scan_security.py      # Scanner principal para CI/CD
+│   │   └── vulnerability_detector.py  # Detección detallada de vulnerabilidades
+│   └── app/                      # Aplicación web demo
+│       └── app.py                # Flask app para deployment
+│
+├── examples/                     # Ejemplos de código
+│   ├── secure.py                 # Código seguro
+│   └── vulnerable.py             # Código con vulnerabilidades
+│
+├── tests/                        # Suite de tests
+│   ├── test_app.py               # Tests de la aplicación Flask
+│   ├── test_sql_injection.py     # Casos de prueba SQL Injection
+│   ├── test_xss_path.py          # Casos de prueba XSS y Path Traversal
+│   └── test_command_crypto.py    # Casos de prueba Command Injection
+│
+├── demos/                        # Scripts de demostración
+│   ├── demo_scanner.py           # Scanner interactivo
+│   └── demo_comprehensive_scan.py # Demo completa multi-archivo
+│
+├── data/                         # Datos y modelos
+│   ├── modelo_seguridad_final.pkl  # Modelo Random Forest entrenado
+│   ├── dataset_contraste.csv     # Dataset balanceado (6580 registros)
+│   └── vulnerability_report.txt  # Reporte de ejemplo
+│
+├── docs/                         # Documentación completa
+│   ├── README.md                 # Documentación principal (español)
+│   ├── USAGE.md                  # Guía de uso
+│   ├── SETUP_GUIDE.md            # Guía de configuración
+│   ├── TELEGRAM_SETUP.md         # Configuración del bot Telegram
+│   └── VULNERABILITY_DETECTION.md # Detección detallada
+│
+├── notebooks/                    # Jupyter notebooks
+│   └── Entrenamiento_Modelo.ipynb # Análisis y visualización
+│
+├── repos_descargados/            # Repositorios para entrenamiento
+│   ├── django/                   # Framework web Python
+│   ├── flask/                    # Microframework Python
+│   ├── keras/                    # ML library
+│   └── requests/                 # HTTP library
+│
+├── .github/workflows/            # GitHub Actions
+│   └── ci-cd-pipeline.yml        # Pipeline completo de 3 etapas
+│
+├── .gitignore                    # Archivos ignorados
+├── Dockerfile                    # Configuración Docker
+├── requirements.txt              # Dependencias producción
+├── requirements-dev.txt          # Dependencias desarrollo
+└── reparar_dataset_contraste.py  # Script de limpieza de datos
 ```
 
-## Instalación
+## 🚀 Instalación
 
-1. Clona este repositorio:
+### Requisitos Previos
+
+- Python 3.11+
+- Git
+- pip
+
+### Instalación Rápida
+
 ```bash
-git clone <repository-url>
-cd lab1p2v2
+# Clonar el repositorio
+git clone https://github.com/cajaya1/SW-seguro.git
+cd SW-seguro
+
+# Crear entorno virtual (recomendado)
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # Linux/Mac
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Para desarrollo
+pip install -r requirements-dev.txt
 ```
 
-2. Instala las dependencias requeridas:
-```bash
-pip install pandas numpy scikit-learn joblib matplotlib seaborn tqdm lizard pydriller flask
-```
+## 💻 Uso Rápido
 
-## Uso
-
-### Inicio Rápido - Escáner de Vulnerabilidades
-
-Ejecuta el escáner interactivo para analizar archivos individuales:
-
-```bash
-python demo_scanner.py
-```
-
-Ingresa la ruta a un archivo de código fuente cuando se solicite. El escáner mostrará:
-- Estado de riesgo (SECURE/HIGH RISK)
-- Porcentaje de probabilidad de vulnerabilidad
-- Métricas detalladas
-
-### Entrenar un Nuevo Modelo
-
-Para entrenar un nuevo modelo con tu propio conjunto de datos:
+### 1. Scanner Interactivo
 
 ```bash
-python entrenamiento.py
+python demos/demo_scanner.py
 ```
 
-Esto hará:
-1. Cargar el conjunto de datos desde `dataset_local.csv`
-2. Extraer características usando análisis estático
-3. Entrenar un clasificador Random Forest
-4. Guardar el modelo como `modelo_seguridad_final.pkl`
-5. Generar métricas de rendimiento y matriz de confusión
+Ingresa la ruta del archivo a analizar y obtendrás un reporte detallado con:
+- Estado del archivo (SECURE / HIGH RISK)
+- Probabilidad de vulnerabilidad
+- Métricas de complejidad
+- Vulnerabilidades específicas encontradas
+- Líneas exactas y recomendaciones
 
-### Minería de Datos de Vulnerabilidades
-
-Para recopilar datos de entrenamiento de repositorios de código abierto:
+### 2. Escaneo de Directorio (CI/CD)
 
 ```bash
-python mineria.py
+# Escanear archivo individual
+python src/scanner/scan_security.py examples/vulnerable.py
+
+# Escanear directorio completo
+python src/scanner/scan_security.py src/
+
+# Salida JSON para automatización
+cat security_scan_results.json
 ```
 
-Esto hará:
-- Clonar repositorios especificados
-- Analizar mensajes de commit para palabras clave relacionadas con seguridad
-- Extraer muestras de código antes/después de correcciones de seguridad
-- Generar conjunto de datos etiquetado para entrenamiento
+### 3. Demo Completa
 
-## Características del Modelo
+```bash
+python demos/demo_comprehensive_scan.py
+```
 
-El escáner analiza las siguientes características del código:
+Analiza múltiples archivos de ejemplo y genera reporte completo.
 
-- **Líneas de Código (NLOC)**: Número de líneas sin comentarios
-- **Complejidad Ciclomática**: Métricas de complejidad del código
-- **Palabras Clave de Riesgo**: Presencia de funciones potencialmente peligrosas
-- **Contenido del Código**: Vectorización TF-IDF del código fuente
+### 4. Entrenar Modelo
 
-### Patrones de Riesgo Detectados
+```bash
+# Con Grid Search (recomendado)
+python src/model/entrenamiento.py
 
-- **Python**: `eval()`, `exec()`, `subprocess`, `os.system`, ejecución SQL
-- **JavaScript**: `eval()`, `innerHTML`, `document.write`, `dangerouslySetInnerHTML`
-- **Java**: Declaraciones SQL dinámicas, `Runtime.exec()`, concatenación de parámetros
+# El modelo se guardará en data/modelo_seguridad_final.pkl
+```
 
-## Ejemplos
+## 📚 Documentación
 
-### Código Seguro vs Vulnerable
+La documentación completa está en la carpeta `docs/`:
 
-El proyecto incluye archivos de ejemplo que demuestran:
+- **[README.md](docs/README.md)** - Documentación completa en español
+- **[USAGE.md](docs/USAGE.md)** - Guía de uso detallada
+- **[SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** - Configuración paso a paso
+- **[TELEGRAM_SETUP.md](docs/TELEGRAM_SETUP.md)** - Configuración bot Telegram
+- **[VULNERABILITY_DETECTION.md](docs/VULNERABILITY_DETECTION.md)** - Sistema de detección
 
-- **seguro.py**: Prácticas de código seguro (consultas parametrizadas, validación de entrada, etc.)
-- **vulnerable.py**: Patrones comunes de vulnerabilidades (inyección SQL, inyección de comandos, etc.)
+## 🔄 CI/CD Pipeline
 
-## Rendimiento
+El proyecto incluye un pipeline completo de 3 etapas:
 
-El modelo entrenado logra:
-- **Precisión**: Varía según el conjunto de datos (típicamente 85%+ en conjuntos balanceados)
-- **Umbral de Riesgo**: Umbral de probabilidad del 40% para clasificación de ALTO RIESGO
-- **Velocidad de Procesamiento**: Analiza archivos en milisegundos después de cargar el modelo
+### Etapa 1: Security Scan
+- Escaneo automático con IA
+- Detección de vulnerabilidades
+- Comentarios en PR con detalles
+- Bloqueo de merge si hay vulnerabilidades
 
-## Consideraciones de Seguridad
+### Etapa 2: Tests & Merge
+- Ejecución de tests unitarios
+- Merge automático a rama `test`
+- Notificaciones de fallas
 
-- Todo el análisis se realiza localmente
-- No se transmite código a servicios externos
-- Las predicciones del modelo son probabilísticas y deben verificarse manualmente
-- La herramienta está diseñada para propósitos educativos y de pruebas de seguridad
+### Etapa 3: Deploy
+- Build de Docker
+- Despliegue automático a producción
+- Notificación de éxito/fallo
 
-## Contribuir
+### Configuración
 
-1. Haz fork del repositorio
-2. Crea una rama de características
-3. Realiza tus cambios
-4. Agrega pruebas si es aplicable
-5. Envía un pull request
+```bash
+# 1. Configurar secrets en GitHub
+TELEGRAM_BOT_TOKEN=tu_token
+TELEGRAM_CHAT_ID=tu_chat_id
 
-## Licencia
+# 2. Crear ramas
+git checkout -b dev
+git push origin dev
+git checkout -b test
+git push origin test
 
-Este proyecto es para propósitos educativos. Por favor, asegúrate de cumplir con las regulaciones de pruebas de seguridad relevantes en tu jurisdicción.
+# 3. Configurar branch protection
+# Settings → Branches → Add rule para 'test' y 'main'
+```
 
-## Limitaciones
+## 🐛 Vulnerabilidades Detectadas
 
-- El análisis estático no puede detectar todos los tipos de vulnerabilidades
-- Las predicciones de aprendizaje automático pueden tener falsos positivos/negativos
-- Requiere modelo pre-entrenado para operar
-- Limitado a lenguajes de programación soportados
+| Tipo | Severidad | Ejemplo |
+|------|-----------|---------|
+| SQL Injection | HIGH | `cursor.execute(f"SELECT * FROM users WHERE id={user_id}")` |
+| XSS | HIGH | `return f"<h1>Welcome {username}</h1>"` |
+| Command Injection | CRITICAL | `os.system(f"ping {user_input}")` |
+| Code Injection | CRITICAL | `eval(user_input)` |
+| Path Traversal | HIGH | `open(request.args.get('file'))` |
+| Deserialization | CRITICAL | `pickle.loads(untrusted_data)` |
+| Weak Crypto | MEDIUM | `hashlib.md5(password)` |
+| Hardcoded Secrets | HIGH | `API_KEY = "sk-1234567890"` |
+| Unsafe File Ops | MEDIUM | `os.remove(user_file)` |
 
-## Mejoras Futuras
+## 📊 Rendimiento del Modelo
 
-- Soporte para lenguajes de programación adicionales
-- Integración con pipelines CI/CD
-- Análisis de código en tiempo real en IDEs
-- Modelos de aprendizaje profundo mejorados
-- Endpoint API para análisis remoto
+- **Accuracy**: ~79.64% (objetivo: 82%+)
+- **ROC-AUC**: ~88.01%
+- **F1-Score**: ~79.79%
+- **Registros de entrenamiento**: 6,580 (balanceado 50/50)
+- **Features**: 7 métricas + TF-IDF (2500 features)
+- **Algoritmo**: Random Forest con Grid Search
 
-## Solución de Problemas
+## 🤝 Contribución
 
-### Problemas Comunes
+Este es un proyecto académico. Para contribuciones:
 
-1. **Archivo de modelo no encontrado**: Ejecuta `entrenamiento.py` para entrenar un nuevo modelo
-2. **Dependencias faltantes**: Instala los paquetes requeridos usando pip
-3. **Conjunto de datos muy grande**: Usa muestreo en el script de entrenamiento
-4. **Problemas de memoria**: Reduce `SAMPLE_SIZE` en la configuración
+1. Fork el repositorio
+2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit cambios (`git commit -m 'Añade nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
 
-### Consejos de Rendimiento
+El pipeline CI/CD automáticamente analizará tu código.
 
-- Usa almacenamiento SSD para conjuntos de datos grandes
-- Aumenta la RAM para procesar repositorios grandes
-- Usa sistemas multi-núcleo para entrenamiento más rápido
-- Cachea repositorios clonados para minería repetida
+## 👥 Autores
 
-## Contacto
+- **Cristhian Jaya** - [cajaya1](https://github.com/cajaya1)
 
-Para preguntas o soporte, por favor abre un issue en el repositorio.
+## 📄 Licencia
+
+Este proyecto es parte de un trabajo académico de la ESPE (Escuela Politécnica del Ejército).
+
+## 🎓 Proyecto Académico
+
+**Título**: Desarrollo e Implementación de un Pipeline CI/CD Seguro con integración de IA para la Detección Automática de Vulnerabilidades
+
+**Institución**: ESPE (Escuela Politécnica del Ejército)
+
+**Fecha de Entrega**: 17 de Diciembre, 2025
+
+**Restricciones**: No se permite uso de LLMs para detección (solo ML tradicional)
+
+---
+
+⭐ Si este proyecto te resulta útil, considera darle una estrella en GitHub!

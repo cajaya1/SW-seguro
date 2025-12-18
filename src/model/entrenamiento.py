@@ -23,15 +23,34 @@ from sklearn.metrics import (
 # --- CONFIGURACIÓN ---
 INPUT_FILE = "dataset_contraste.csv"
 MODEL_FILE = "modelo_seguridad_final.pkl"
-SAMPLE_SIZE = 30000   
+SAMPLE_SIZE = 40000   # Increased for better training
 MAX_CODE_LEN = 30000
-USE_GRID_SEARCH = False  # Set to True for hyperparameter optimization (slower but better) 
+USE_GRID_SEARCH = True  # Activated for hyperparameter optimization to reach 82%+ accuracy 
 
 # --- FUNCIONES ---
 RISK_PATTERNS = {
-    'py': [r'eval\(', r'exec\(', r'subprocess\.', r'os\.system', r'cursor\.execute'],
-    'js': [r'eval\(', r'innerHTML', r'document\.write', r'dangerouslySetInnerHTML'],
-    'java': [r'Statement\s+', r'\+\s*request\.getParameter', r'Runtime\.exec']
+    'py': [
+        r'eval\(', r'exec\(', r'subprocess\.', r'os\.system', r'cursor\.execute',
+        r'pickle\.loads', r'yaml\.load', r'shell=True', r'input\(', r'__import__',
+        r'compile\(', r'open\(.*["\']w', r'rmtree', r'unlink'
+    ],
+    'js': [
+        r'eval\(', r'innerHTML', r'document\.write', r'dangerouslySetInnerHTML',
+        r'setTimeout.*\(', r'setInterval.*\(', r'Function\(', r'\.href\s*=',
+        r'document\.cookie', r'localStorage', r'sessionStorage'
+    ],
+    'java': [
+        r'Statement\s+', r'\+\s*request\.getParameter', r'Runtime\.exec',
+        r'ProcessBuilder', r'ScriptEngine', r'\.createQuery\(',
+        r'Reflection', r'Class\.forName'
+    ]
+}
+
+# Sanitization patterns (good security practices)
+SANITIZATION_PATTERNS = {
+    'py': [r'escape\(', r'quote\(', r'sanitize', r'validate', r'strip\(', r'clean'],
+    'js': [r'escape', r'sanitize', r'DOMPurify', r'textContent', r'innerText'],
+    'java': [r'PreparedStatement', r'escape', r'sanitize', r'validate']
 }
 
 def extract_features_safe(code, filename):
@@ -39,7 +58,11 @@ def extract_features_safe(code, filename):
     code_str = str(code)
     
     if len(code_str) > MAX_CODE_LEN:
-        return {'nloc': 0, 'avg_complexity': 0, 'max_complexity': 0, 'risk_keywords': 0}
+        return {
+            'nloc': 0, 'avg_complexity': 0, 'max_complexity': 0, 
+            'risk_keywords': 0, 'sanitization_count': 0, 
+            'risk_density': 0, 'comment_ratio': 0
+        }
 
     try:
         analysis = lizard.analyze_file.analyze_source_code(filename, code_str)
@@ -54,13 +77,36 @@ def extract_features_safe(code, filename):
     try:
         ext = str(filename).split('.')[-1]
         lang = 'py' if ext == 'py' else ('js' if ext in ['js', 'ts'] else ('java' if ext == 'java' else None))
-        score = 0
+        
+        # Count risk patterns
+        risk_score = 0
         if lang and lang in RISK_PATTERNS:
             for p in RISK_PATTERNS[lang]:
-                if re.search(p, code_str): score += 1
-        features['risk_keywords'] = score
+                if re.search(p, code_str, re.IGNORECASE): 
+                    risk_score += 1
+        features['risk_keywords'] = risk_score
+        
+        # Count sanitization patterns (good practices)
+        sanitization_score = 0
+        if lang and lang in SANITIZATION_PATTERNS:
+            for p in SANITIZATION_PATTERNS[lang]:
+                if re.search(p, code_str, re.IGNORECASE):
+                    sanitization_score += 1
+        features['sanitization_count'] = sanitization_score
+        
+        # Risk density (risk per 100 lines)
+        total_lines = len(code_str.split('\n'))
+        features['risk_density'] = (risk_score / max(total_lines, 1)) * 100
+        
+        # Comment ratio (approximation)
+        comment_lines = len(re.findall(r'^\s*[#//]', code_str, re.MULTILINE))
+        features['comment_ratio'] = comment_lines / max(total_lines, 1)
+        
     except:
         features['risk_keywords'] = 0
+        features['sanitization_count'] = 0
+        features['risk_density'] = 0
+        features['comment_ratio'] = 0
         
     return features
 
@@ -127,16 +173,19 @@ if __name__ == "__main__":
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     
-    # Improved pipeline with optimized parameters
+    # Improved pipeline with optimized parameters and more features
     pipeline = Pipeline([
         ('preprocessor', ColumnTransformer(transformers=[
-            ('text', TfidfVectorizer(max_features=2000, stop_words='english', ngram_range=(1, 2)), 'code'),
-            ('num', StandardScaler(), ['nloc', 'avg_complexity', 'max_complexity', 'risk_keywords'])
+            ('text', TfidfVectorizer(max_features=2500, stop_words='english', ngram_range=(1, 3)), 'code'),
+            ('num', StandardScaler(), [
+                'nloc', 'avg_complexity', 'max_complexity', 'risk_keywords',
+                'sanitization_count', 'risk_density', 'comment_ratio'
+            ])
         ])),
         ('classifier', RandomForestClassifier(
-            n_estimators=200,           # Increased from 100
-            max_depth=30,                # Prevent overfitting
-            min_samples_split=5,         # Better generalization
+            n_estimators=300,            # Increased for better accuracy
+            max_depth=35,                # Prevent overfitting
+            min_samples_split=4,         # Better generalization
             min_samples_leaf=2,          # Reduce noise sensitivity
             max_features='sqrt',         # Feature randomness
             random_state=42,
@@ -148,16 +197,18 @@ if __name__ == "__main__":
     # Optional: Grid Search for hyperparameter optimization
     if USE_GRID_SEARCH:
         print("   Performing Grid Search for hyperparameter optimization...")
+        print("   This may take 10-20 minutes depending on dataset size...")
         param_grid = {
-            'classifier__n_estimators': [150, 200, 250],
-            'classifier__max_depth': [20, 30, 40],
-            'classifier__min_samples_split': [3, 5, 7],
-            'preprocessor__text__max_features': [1500, 2000, 2500]
+            'classifier__n_estimators': [250, 300, 350],
+            'classifier__max_depth': [30, 35, 40],
+            'classifier__min_samples_split': [3, 4, 5],
+            'classifier__min_samples_leaf': [1, 2, 3],
+            'preprocessor__text__max_features': [2000, 2500, 3000]
         }
-        grid_search = GridSearchCV(pipeline, param_grid, cv=3, scoring='f1', n_jobs=-1, verbose=1)
+        grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='f1', n_jobs=-1, verbose=2)
         grid_search.fit(X_train, y_train)
         pipeline = grid_search.best_estimator_
-        print(f"   Best parameters: {grid_search.best_params_}")
+        print(f"\n   Best parameters found: {grid_search.best_params_}")
         print(f"   Best cross-validation F1-score: {grid_search.best_score_:.4f}")
     else:
         pipeline.fit(X_train, y_train)

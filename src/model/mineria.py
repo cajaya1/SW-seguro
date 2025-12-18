@@ -17,7 +17,7 @@ REPO_URLS = [
 KEYWORDS = ["security", "vulnerability", "cve", "fix", "patch", "denial of service", "xss", "injection"]
 EXTENSIONS = (".py", ".js", ".java", ".cpp", ".ts")
 ARCHIVO_SALIDA = "dataset_local.csv"
-CARPETA_REPOS = "repos_descargados" # Aquí se guardarán los clones
+CARPETA_REPOS = "repos_descargados" # Donde se clonarán los repos
 
 # Crear carpeta para repos si no existe
 if not os.path.exists(CARPETA_REPOS):

@@ -1,0 +1,194 @@
+name: 🔒 Secure CI/CD Pipeline with AI Security Scanner
+
+on:
+  pull_request:
+    branches: [ test ]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'docs/**'
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Stage 1: AI Security Analysis
+  security-scan:
+    name: 🛡️ AI Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn joblib lizard
+      
+      - name: 📢 Notify Telegram - Security Scan Started
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="🔍 Security scan initiated for PR #${{ github.event.pull_request.number }}%0A%0ARepository: ${{ github.repository }}%0ABranch: ${{ github.head_ref }}%0AAuthor: ${{ github.actor }}"
+      
+      - name: 🔍 Run AI Security Scanner
+        id: security_check
+        continue-on-error: true
+        run: |
+          python src/scanner/scan_security.py src/
+          echo "scan_result=$?" >> $GITHUB_OUTPUT
+      
+      - name: 📊 Parse Security Results
+        id: parse_results
+        run: |
+          if [ -f security_scan_results.json ]; then
+            VULNERABLE=$(jq -r '.vulnerable' security_scan_results.json)
+            PROBABILITY=$(jq -r '.vulnerable_files[0].probability // "0"' security_scan_results.json)
+            echo "vulnerable_count=$VULNERABLE" >> $GITHUB_OUTPUT
+            echo "probability=$PROBABILITY" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: ❌ Handle Vulnerable Code
+        if: steps.security_check.outputs.scan_result != '0'
+        run: |
+          echo "::error::Vulnerable code detected by AI model"
+          
+          # Send Telegram notification
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="❌ SECURITY ALERT!%0A%0APR #${{ github.event.pull_request.number }} BLOCKED%0A%0AReason: Vulnerable code detected by AI model%0AProbability: ${{ steps.parse_results.outputs.probability }}%0A%0AAction Required: Review and fix security issues%0A%0ARepository: ${{ github.repository }}"
+          
+          # Comment on PR
+          gh pr comment ${{ github.event.pull_request.number }} --body "## ❌ Security Check Failed
+
+          **AI Model detected potential vulnerabilities**
+
+          - **Risk Probability**: ${{ steps.parse_results.outputs.probability }}
+          - **Vulnerable Files**: ${{ steps.parse_results.outputs.vulnerable_count }}
+          
+          ### Action Required
+          Please review and fix the identified security issues before merging.
+          
+          <details>
+          <summary>View detailed scan results</summary>
+          
+          \`\`\`json
+          $(cat security_scan_results.json)
+          \`\`\`
+          </details>"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 🚫 Block merge if vulnerable
+        if: steps.security_check.outputs.scan_result != '0'
+        run: |
+          echo "Security check failed - blocking merge"
+          exit 1
+      
+      - name: ✅ Notify Success
+        if: steps.security_check.outputs.scan_result == '0'
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="✅ Security scan passed for PR #${{ github.event.pull_request.number }}%0A%0AAll code classified as SECURE by AI model%0A%0AProceeding to next stage..."
+  
+  # Stage 2: Merge to test + Run Tests
+  test-and-merge:
+    name: 🧪 Tests & Merge to Test
+    needs: security-scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      
+      - name: 📢 Notify Telegram - Tests Starting
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="🧪 Running tests for PR #${{ github.event.pull_request.number }}..."
+      
+      - name: 🧪 Run Unit Tests
+        id: tests
+        run: |
+          pytest test_app.py -v --tb=short
+          echo "test_result=$?" >> $GITHUB_OUTPUT
+      
+      - name: ❌ Handle Test Failures
+        if: steps.tests.outputs.test_result != '0'
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="❌ Tests FAILED for PR #${{ github.event.pull_request.number }}%0A%0APlease fix failing tests before merging."
+          exit 1
+      
+      - name: ✅ Tests Passed
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="✅ All tests passed for PR #${{ github.event.pull_request.number }}%0A%0AReady for merge to test branch..."
+      
+      - name: 🔀 Auto-merge to test branch
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --auto --squash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 📢 Notify Merge Complete
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="🔀 PR #${{ github.event.pull_request.number }} merged to test branch%0A%0APreparing for production deployment..."
+
+  # Stage 3: Deploy to Production (triggers on push to main)
+  deploy:
+    name: 🚀 Deploy to Production
+    needs: test-and-merge
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📢 Notify Telegram - Deployment Starting
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="🚀 Deployment to production initiated...%0A%0ARepository: ${{ github.repository }}%0ACommit: ${{ github.sha }}"
+      
+      - name: 🐳 Build Docker Image
+        run: |
+          docker build -t secure-devops-app:latest .
+      
+      - name: 🌐 Deploy to Render (or other platform)
+        run: |
+          echo "Deployment configured through Render/Railway dashboard"
+          # Render auto-deploys on main branch push if configured
+      
+      - name: ✅ Notify Deployment Success
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="✅ DEPLOYMENT SUCCESSFUL!%0A%0AApplication is now live in production%0A%0ARepository: ${{ github.repository }}%0ACommit: ${{ github.sha }}%0A%0A🎉 All stages completed successfully!"

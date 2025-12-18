@@ -1,10 +1,18 @@
+import sys
+from pathlib import Path
+
+# Add src to path
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
 import joblib
 import pandas as pd
 import lizard
 import re
+from src.scanner.vulnerability_detector import detect_vulnerabilities, format_vulnerability_report, get_vulnerability_summary
 
 # Cargar el modelo entrenado
-MODELO_PATH = "modelo_seguridad_final.pkl"
+MODEL_PATH = PROJECT_ROOT / "data" / "modelo_seguridad_final.pkl"
 
 print("Loading AI model...")
 try:
@@ -57,10 +65,25 @@ def analizar_archivo(ruta_archivo):
         # Files with probability greater than 40% are marked as high risk
         status = "HIGH RISK" if prob > 0.40 else "SECURE"
         print(f"\nAnalysis results for: {ruta_archivo}")
-        print("-" * 30)
+        print("=" * 80)
         print(f"Status: {status}")
         print(f"Risk probability: {prob:.1%}")
-        print(f"Details: {feats}")
+        print(f"Complexity metrics: NLOC={feats['nloc']}, Avg Complexity={feats['avg_complexity']:.2f}")
+        print(f"Risk indicators: {feats['risk_keywords']} patterns detected")
+        
+        # Detailed vulnerability detection if high risk
+        if status == "HIGH RISK":
+            vulnerabilities = detect_vulnerabilities(contenido, ruta_archivo)
+            if vulnerabilities:
+                summary = get_vulnerability_summary(vulnerabilities)
+                print(f"\n🔍 DETAILED VULNERABILITY ANALYSIS:")
+                print(f"   Total vulnerabilities found: {summary['total']}")
+                print(f"   By severity: {summary['by_severity']}")
+                print(f"   By type: {summary['by_type']}")
+                print(format_vulnerability_report(vulnerabilities, ruta_archivo))
+            else:
+                print("\n⚠️  File flagged as HIGH RISK but no specific vulnerabilities identified.")
+                print("   Manual review recommended.")
         
     except Exception as e:
         print(f"Error reading file: {e}")
