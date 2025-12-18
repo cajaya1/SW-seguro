@@ -1,0 +1,19 @@
+{
+  "name": "sw-seguro-cicd",
+  "type": "web",
+  "env": "docker",
+  "region": "oregon",
+  "plan": "free",
+  "branch": "main",
+  "healthCheckPath": "/health",
+  "envVars": [
+    {
+      "key": "ENVIRONMENT",
+      "value": "production"
+    },
+    {
+      "key": "PORT",
+      "value": "5000"
+    }
+  ]
+}
